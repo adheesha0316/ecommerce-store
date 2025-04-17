@@ -10,7 +10,7 @@ import {
   IconButton,
   Grid,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import FacebookIcon from "@mui/icons-material/Facebook";
@@ -19,47 +19,56 @@ import GoogleIcon from "@mui/icons-material/Google";
 import loginImage from "../../assets/signin-image.jpg";
 import instance from "../../service/AxiosOder";
 
-function Login() {
+function Login({ setLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = () => {
     setEmailError("");
     setPasswordError("");
     setLoading(true);
-
+  
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setEmailError("Invalid email format.");
       setLoading(false);
       return;
     }
-
+  
     if (!password || password.length < 4) {
       setPasswordError("Password must be at least 4 characters.");
       setLoading(false);
       return;
     }
-
+  
     instance
       .post("/login", {
         email: email,
         password: password,
       })
       .then(function (response) {
-        console.log(response);
-      })
+        console.log("Login successful:", response.data);
+        localStorage.setItem("afsd-7-token", response.data.token);
+        setLogin(true); // ✅ This line will now work!
+        alert("Login Success!");
+        navigate("/dashboard");
+      })      
+      
       .catch(function (error) {
-        console.log(error);
-        setEmailError("Login failed. Please check your credentials.");
+        console.log("Login error:", error);
+        if (error.response && error.response.status === 401) {
+          setEmailError("Invalid email or password.");
+        } else {
+          setEmailError("An error occurred. Please try again later.");
+        }
+      })
+      .finally(() => {
         setLoading(false);
       });
-
-    console.log("Loggin Success:", { email, password });
-    alert("Login Success!");
-    setLoading(false);
+    
   };
 
   return (
